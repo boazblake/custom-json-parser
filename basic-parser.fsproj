@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>basic_parser</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="Parsers.fs" />
+    <Compile Include="Model.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>
