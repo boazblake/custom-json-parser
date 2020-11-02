@@ -7,7 +7,48 @@ module Model
     let (Parser innerFn) = parser
     innerFn input
 
+  let bindP fn firstParser =
+    let innerFn input =
+      let result1 = run firstParser input
+      match result1 with
+      | Failure err -> Failure err
+      | Success (value1, remainingInput) ->
+        let nextParser = fn value1
+        run nextParser remainingInput
+    Parser innerFn
+    //infix
+  let (>>=) parser fn = bindP fn parser
+
+  let returnP x =
+    let innerFn input =
+      Success(x, input)
+    Parser innerFn
+
+  let mapP fn =
+    bindP (fn >> returnP)
+  let (<!>) = mapP
+  let (|>>) x f = mapP f x
+
+
+  let applyP fP xP =
+    fP >>= ( fun f ->
+    xP >>= (fun x ->
+      returnP (f x)))
+
+  let ( <*> ) = applyP
+
+
+  let lift2 f xP yP =
+    returnP f <*> xP <*> yP
+
+
   let andThen parser1 parser2 =
+    parser1 >>= (fun result1 ->
+    parser2 >>= (fun result2 ->
+      returnP (result1, result2)))
+  let (.>>.) = andThen
+
+  let andThen' parser1 parser2 =
     let innerFn input =
       let result1 = run parser1 input
 
@@ -24,7 +65,6 @@ module Model
                 let newVal = (value1, value2)
                 Success (newVal, remain2)
     Parser innerFn
-  let (.>>.) = andThen
 
   let orElse parser1 parser2 =
     let innerFn input =
@@ -48,7 +88,7 @@ module Model
       |> List.map ParseChar
       |> choice
 
-  let mapP fn parser =
+  let mapP' fn parser =
     let innerFn input =
       let result = run parser input
 
@@ -61,33 +101,20 @@ module Model
 
     Parser innerFn
 
-  let (<!>) = mapP
-  let (|>>) x f = mapP f x
-
   let parseDigit = anyOf ['0'..'9']
   let transformTuple ((c1, c2), c3) = System.String [| c1; c2; c3 |]
 
   let parse3Digits =
     let tupleParser =
       parseDigit .>>. parseDigit .>>. parseDigit
-    mapP transformTuple tupleParser
+    mapP' transformTuple tupleParser
 
   let parse3DigitsAsInt =
-    mapP int parse3Digits
+    mapP' int parse3Digits
 
-  let returnP x =
-    let innerFn input =
-      Success(x, input)
-    Parser innerFn
-
-  let applyP fP xP =
+  let applyP' fP xP =
     (fP .>>. xP)
-      |> mapP (fun (f,x) -> f x)
-
-  let ( <*> ) = applyP
-
-  let lift2 f xP yP =
-    returnP f <*> xP <*> yP
+      |> mapP' (fun (f,x) -> f x)
 
   let addP =
     lift2 (+)
@@ -118,7 +145,7 @@ module Model
     |> List.ofSeq
     |> List.map ParseChar
     |> sequence
-    |> mapP charListToString
+    |> mapP' charListToString
 
 
   let rec parseZeroOrMore parser input =
@@ -137,7 +164,13 @@ module Model
     Parser innerFn
 
 
-  let many1 parser  =
+  let many1 parser =
+    parser >>= (fun head ->
+    many parser >>= fun tail ->
+      returnP (head::tail))
+
+
+  let many1' parser  =
     let rec innerFn input =
       let firstResult = run parser input
 
@@ -162,7 +195,7 @@ module Model
     let digits = many1 digit
 
     digits
-    |> mapP resultToInt
+    |> mapP' resultToInt
 
   let opt p =
     let some = p |>> Some
@@ -178,18 +211,18 @@ module Model
 
     let digit = anyOf ['0'..'9']
 
-    let digits = many1 digit
+    let digits = many1' digit
 
     opt (ParseChar '-') .>>. digits
       |>> resultToInt
 
   let (.>>) p1 p2 =
     p1 .>>. p2
-    |> mapP (fun (a,b) -> a)
+    |> mapP' (fun (a,b) -> a)
 
   let (>>.) p1 p2 =
     p1 .>>. p2
-    |> mapP (fun (a,b) -> b)
+    |> mapP' (fun (a,b) -> b)
 
   let between p1 p2 p3 =
     p1 >>. p2 .>> p3
@@ -203,14 +236,4 @@ module Model
   let sepBy p sep =
     sepBy1 p sep <|> returnP []
 
-  let bindP fn firstParser =
-    let innerFn input =
-      let result1 = run firstParser input
-      match result1 with
-      | Failure err -> Failure err
-      | Success (value1, remainingInput) ->
-        let nextParser = fn value1
-        run nextParser remainingInput
-    Parser innerFn
 
-  let (>>=) parser fn = bindP fn parser

@@ -70,12 +70,12 @@ let main argv =
     let digit = anyOf ['0'..'9']
 
     let zeroOrMoreDigitList = sepBy digit comma
-    let oneOrMoreDigitList = sepBy1 digit comma
-    run oneOrMoreDigitList "1;"
+    // let oneOrMoreDigitList = sepBy1 digit comma
+    // run oneOrMoreDigitList "1;"
     // run oneOrMoreDigitList "1,2;"
     // run oneOrMoreDigitList "1,2,3;"
     // run oneOrMoreDigitList "Z;"
-    // run zeroOrMoreDigitList "1;"
+    run zeroOrMoreDigitList "1;"
     // run zeroOrMoreDigitList "1,2;"
     // run zeroOrMoreDigitList "1,2,3;"
     // run zeroOrMoreDigitList "Z;"

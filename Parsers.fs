@@ -1,5 +1,5 @@
 module Parsers
-
+  open System
   open Types
 
 
@@ -15,7 +15,7 @@ module Parsers
 
 
   let parseStringWithChar char (str: string) =
-      if str.Length = 0 then
+      if String.IsNullOrEmpty(str) then
         Failure "End of input"
       else
         let first = str.[0]
@@ -23,7 +23,6 @@ module Parsers
           let remaining = str.[1..]
           Success (char, remaining)
         else
-          let first = str.[0]
           Failure (sprintf "No Character %c found in the string %s, found %c" char str first)
 
 
