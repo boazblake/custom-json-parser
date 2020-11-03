@@ -2,6 +2,7 @@
 
 open System
 open Types
+open Helpers
 open Parsers
 open Model
 
@@ -66,18 +67,26 @@ let main argv =
     // run quotedInteger "\"1234\""
     // run quotedInteger "1234"
 
-    let comma = ParseChar ','
-    let digit = anyOf ['0'..'9']
-
-    let zeroOrMoreDigitList = sepBy digit comma
+//     let comma = ParseChar ','
+     //     let zeroOrMoreDigitList = sepBy digit comma
     // let oneOrMoreDigitList = sepBy1 digit comma
     // run oneOrMoreDigitList "1;"
     // run oneOrMoreDigitList "1,2;"
     // run oneOrMoreDigitList "1,2,3;"
     // run oneOrMoreDigitList "Z;"
-    run zeroOrMoreDigitList "1;"
+     //     run zeroOrMoreDigitList "1;"
     // run zeroOrMoreDigitList "1,2;"
     // run zeroOrMoreDigitList "1,2,3;"
     // run zeroOrMoreDigitList "Z;"
-    |> printfn "result: %A"
-    0 // return an integer exit code
+//     let digit =
+//      let predicate = Char.IsDigit
+//      let label = "digit"
+//      satisfy predicate label
+//     run digit "|ABC"
+     let whitespace =
+          let predicate = Char.IsWhiteSpace
+          let label = "whitespace"
+          satisfy predicate label
+     run whitespace "t\t"
+     |> printfn "result: %A"
+     0 // return an integer exit code

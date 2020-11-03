@@ -1,13 +1,14 @@
 module Types
-
-  type Aparser = string  -> (bool * string)
+  type ParserLabel = string
+  type ParserErr = string
 
   type Result<'a> =
     | Success of 'a
-    | Failure of string
-
-  type Msg = string
+    | Failure of ParserLabel * ParserErr
 
   type ParseChar = char -> (string -> Result<char * string>)
 
-  type Parser<'T> = Parser of (string -> Result<'T * string>)
+  type Parser<'a> = {
+    ParseFn : (string -> Result<'a * string>)
+    Label : ParserLabel
+  }

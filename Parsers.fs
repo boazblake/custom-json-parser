@@ -1,7 +1,7 @@
 module Parsers
   open System
   open Types
-
+  open Helpers
 
   let Aparser (str:string) =
     printfn "str: %s" str
@@ -13,18 +13,21 @@ module Parsers
     else
       (false,str)
 
-
-  let parseStringWithChar char (str: string) =
-      if String.IsNullOrEmpty(str) then
-        Failure "End of input"
+  let satisfy predicate label =
+    let parseFn input =
+      if String.IsNullOrEmpty(input) then
+        Failure (label, "No More input")
       else
-        let first = str.[0]
-        if first = char then
-          let remaining = str.[1..]
-          Success (char, remaining)
+        let first = input.[0]
+        if predicate first then
+          let remaining = input.[1..]
+          Success (first, remaining)
         else
-          Failure (sprintf "No Character %c found in the string %s, found %c" char str first)
-
+          let err = sprintf "Unexpexted %c" first
+          Failure (label, err)
+    {ParseFn = parseFn; Label=label}
 
   let ParseChar char =
-    Parser (parseStringWithChar char)
+    let predicate ch = (ch = char)
+    let label = sprintf "%c" char
+    satisfy predicate label
