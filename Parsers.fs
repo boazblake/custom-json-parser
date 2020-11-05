@@ -1,33 +1,28 @@
 module Parsers
   open System
-  open Types
   open Helpers
 
-  let Aparser (str:string) =
-    printfn "str: %s" str
-    if str.Length = 0 then
-      (false,"")
-    else if str.[0] = 'A' then
-      let st = str.[1..]
-      (true, st)
-    else
-      (false,str)
-
-  let satisfy predicate label =
-    let parseFn input =
-      if String.IsNullOrEmpty(input) then
-        Failure (label, "No More input")
-      else
-        let first = input.[0]
-        if predicate first then
-          let remaining = input.[1..]
-          Success (first, remaining)
-        else
-          let err = sprintf "Unexpexted %c" first
-          Failure (label, err)
-    {ParseFn = parseFn; Label=label}
-
-  let ParseChar char =
+  let parseChar char =
     let predicate ch = (ch = char)
     let label = sprintf "%c" char
     satisfy predicate label
+
+  let whiteSpaceChar =
+    let predicate = Char.IsWhiteSpace
+    let label = "whitespace"
+    satisfy predicate label
+
+  let digitChar =
+    let predicate = Char.IsDigit
+    let label = "digit"
+    satisfy predicate label
+
+// let Aparser (str:string) =
+  //   printfn "str: %s" str
+  //   if str.Length = 0 then
+  //     (false,"")
+  //   else if str.[0] = 'A' then
+  //     let st = str.[1..]
+  //     (true, st)
+  //   else
+  //     (false,str)

@@ -4,15 +4,12 @@ module Model
   open Helpers
   open Parsers
 
-  let run parser input =
-    parser.ParseFn input
-
   let bindP fn firstParser =
     let label = "unknown"
     let innerFn input =
       let result1 = run firstParser input
       match result1 with
-      | Failure (label, err) -> Failure (label, err)
+      | Failure (label, err, pos) -> Failure (label, err, pos)
       | Success (value1, remainingInput) ->
         let nextParser = fn value1
         run nextParser remainingInput
@@ -51,25 +48,6 @@ module Model
       returnP (result1, result2)))
   let (.>>.) = andThen
 
-  let andThen' parser1 parser2 =
-    let label = "unknown"
-    let innerFn input =
-      let result1 = run parser1 input
-
-      match result1 with
-        | Failure (label, err) ->
-          Failure (label, err)
-        | Success (value1, remain1) ->
-          let result2 = run parser2 remain1
-
-          match result2 with
-            | Failure (label, err) ->
-                Failure (label, err)
-            | Success (value2, remain2) ->
-                let newVal = (value1, value2)
-                Success (newVal, remain2)
-    {ParseFn = innerFn; Label = label }
-
   let orElse parser1 parser2 =
     let label = "unknown"
     let innerFn input =
@@ -78,7 +56,7 @@ module Model
       match result1 with
       | Success result ->
           result1
-      | Failure (label, err) ->
+      | Failure (label, err, pos) ->
         let result2 = run parser2 input
         result2
 
@@ -91,7 +69,7 @@ module Model
   let anyOf listOfChars =
     let label = sprintf "any of %A" listOfChars
     listOfChars
-      |> List.map ParseChar
+      |> List.map parseChar
       |> choice
       <?> label
 
@@ -104,21 +82,10 @@ module Model
       | Success (value, remaining) ->
         let newVal = fn value
         Success (newVal, remaining)
-      | Failure (label, err) ->
-        Failure (label, err)
+      | Failure (label, err, pos) ->
+        Failure (label, err, pos)
 
     {ParseFn = innerFn; Label = label}
-
-  // let parseDigit = anyOf ['0'..'9']
-  // let transformTuple ((c1, c2), c3) = System.String [| c1; c2; c3 |]
-
-  // let parse3Digits =
-  //   let tupleParser =
-  //     parseDigit .>>. parseDigit .>>. parseDigit
-  //   mapP' transformTuple tupleParser
-
-  // let parse3DigitsAsInt =
-  //   mapP' int parse3Digits
 
   let applyP' fP xP =
     (fP .>>. xP)
@@ -148,36 +115,14 @@ module Model
   let charListToString charList =
     System.String(List.toArray charList)
 
-  // let ParseString str =
-  //   str
-  //   |> List.ofSeq
-  //   |> List.map ParseChar
-  //   |> sequence
-  //   |> mapP' charListToString
-
-
-  let rec parseZeroOrMore parser input =
-    let firstResult = run parser input
-    match firstResult with
-    | Failure _ -> ([], input)
-    | Success (firstValue, inputAfterFirstParse) ->
-      let (subsequentValues, remainingInput) =
-        parseZeroOrMore parser inputAfterFirstParse
-      let values = firstValue::subsequentValues
-      (values, remainingInput)
-
-  let many parser =
-    let label = "unknown"
-    let rec innerFn input =
-      Success(parseZeroOrMore parser input)
-    { ParseFn = innerFn; Label = label }
-
 
   let many1 parser =
     parser >>= (fun head ->
     many parser >>= fun tail ->
       returnP (head::tail))
 
+  let spaces = many whiteSpaceChar
+  let spaces1 = many1 whiteSpaceChar
 
   let many1' parser  =
     let label = "unknown"
@@ -185,8 +130,8 @@ module Model
       let firstResult = run parser input
 
       match firstResult with
-      | Failure (label, err) ->
-        Failure (label, err)
+      | Failure (label, err, pos) ->
+        Failure (label, err, pos)
       | Success (firstValue, inputAfterFirstParse) ->
         let (subseqValue, remainingInput) = parseZeroOrMore parser inputAfterFirstParse
 
@@ -195,36 +140,11 @@ module Model
 
     {ParseFn = innerFn; Label = label }
 
-
-  // let ParseInt =
-  //   let resultToInt digitList =
-  //     System.String(List.toArray digitList) |> int
-
-  //   let digit = anyOf ['0'..'9']
-
-  //   let digits = many1 digit
-
-  //   digits
-  //   |> mapP' resultToInt
-
   let opt p =
     let some = p |>> Some
     let none = returnP None
     some <|> none
 
-  // let ParseIntSign =
-  //   let resultToInt (sign, charList) =
-  //     let i = System.String(List.toArray charList) |> int
-  //     match sign with
-  //     | Some _ -> -i
-  //     | None -> i
-
-  //   let digit = anyOf ['0'..'9']
-
-  //   let digits = many1' digit
-
-  //   opt (ParseChar '-') .>>. digits
-  //     |>> resultToInt
 
   let (.>>) p1 p2 =
     p1 .>>. p2
@@ -245,5 +165,3 @@ module Model
 
   let sepBy p sep =
     sepBy1 p sep <|> returnP []
-
-
